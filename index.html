@@ -1,0 +1,258 @@
+
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101015">
+<title>Video Studio AI</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#101015;color:white;font-family:Arial,sans-serif}
+header{padding:17px;background:#191820;display:flex;justify-content:space-between;align-items:center}
+h2{margin:0;color:#c4a3ff;font-size:21px}
+main{padding:12px;max-width:700px;margin:auto}
+.panel{background:#1c1b25;padding:14px;border-radius:14px;margin-bottom:12px}
+.preview{height:260px;background:#08080b;border-radius:12px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+video{max-width:100%;max-height:100%;display:none}
+#overlay{position:absolute;top:45%;left:5%;width:90%;text-align:center;font-size:25px;font-weight:bold;text-shadow:2px 2px 5px black;pointer-events:none}
+button,.upload{background:#803de5;color:white;border:0;border-radius:9px;padding:11px;margin:3px;font-weight:bold;cursor:pointer}
+input,select{width:100%;margin:8px 0;padding:10px;border-radius:8px;border:1px solid #444;background:#292733;color:white}
+input[type=file]{display:none}
+label{font-size:13px;color:#c9c5d4}
+.tools{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.tools button{background:#302b3d;min-height:58px}
+button:active{background:#a855f7}
+.small{font-size:12px;color:#aaa}
+#result{white-space:pre-wrap;color:#d7c3ff;font-size:13px}
+</style>
+</head>
+<body>
+
+<header>
+<h2>✦ Video Studio AI</h2>
+<button onclick="document.getElementById('media').click()">＋</button>
+</header>
+
+<main>
+
+<section class="panel">
+<div class="preview" id="preview">
+<div id="placeholder">🎬<br>Видео таңда</div>
+<video id="video" playsinline controls></video>
+<div id="overlay"></div>
+</div>
+<input type="file" id="media" accept="video/*,image/*">
+<button onclick="video.play()">▶</button>
+<button onclick="video.pause()">Ⅱ</button>
+<button onclick="video.currentTime=0">↺</button>
+<p class="small" id="duration">Видео таңдалмады</p>
+</section>
+
+<section class="panel">
+<h3>✂ Монтаж</h3>
+<label>Басталу уақыты</label>
+<input id="start" type="number" min="0" value="0" step="0.1">
+<label>Аяқталу уақыты</label>
+<input id="end" type="number" min="0" value="0" step="0.1">
+<button onclick="video.currentTime=Number(start.value)">Уақытқа өту</button>
+<button onclick="video.currentTime=Number(start.value);video.play()">Қиюды көру</button>
+</section>
+
+<section class="panel">
+<h3>🎨 Фильтрлер</h3>
+<div class="tools">
+<button onclick="filter('none')">Қалыпты</button>
+<button onclick="filter('grayscale(1)')">Ақ-қара</button>
+<button onclick="filter('sepia(1)')">Ретро</button>
+<button onclick="filter('contrast(1.5)')">Контраст</button>
+<button onclick="filter('brightness(1.3)')">Жарық</button>
+<button onclick="filter('saturate(2)')">Қанық түс</button>
+</div>
+<label>Жарықтық</label>
+<input type="range" min="50" max="150" value="100" id="bright">
+</section>
+
+<section class="panel">
+<h3>⚡ Жылдамдық</h3>
+<select id="speed" onchange="video.playbackRate=Number(this.value)">
+<option value="0.5">0.5x</option>
+<option value="0.75">0.75x</option>
+<option value="1" selected>1x</option>
+<option value="1.5">1.5x</option>
+<option value="2">2x</option>
+</select>
+</section>
+
+<section class="panel">
+<h3>🔤 Мәтін</h3>
+<input id="caption" placeholder="Мәтін жаз...">
+<button onclick="addText()">Мәтінді қосу</button>
+<button onclick="overlay.innerText=''">Өшіру</button>
+</section>
+
+<section class="panel">
+<h3>🎵 Музыка</h3>
+<input type="file" id="musicFile" accept="audio/*">
+<label class="upload" for="musicFile">Музыка таңдау</label>
+<audio id="music" controls style="width:100%;margin-top:12px"></audio>
+</section>
+
+<section class="panel">
+<h3>🤖 AI көмекші</h3>
+<div class="tools">
+<button onclick="ai('Монтаж жоспарын ұсын')">AI монтаж</button>
+<button onclick="ai('Субтитр жасауға көмектес')">AI субтитр</button>
+<button onclick="ai('Видеоға сценарий жаз')">AI сценарий</button>
+<button onclick="ai('Эффектілер ұсын')">AI эффект</button>
+<button onclick="ai('Видеоға музыка стилін ұсын')">AI музыка</button>
+<button onclick="ai('Видео идеясын ұсын')">AI идея</button>
+</div>
+<p id="result">AI көмекшіге қош келдің!</p>
+</section>
+
+<section class="panel">
+<h3>📐 Видео өлшемі</h3>
+<select id="ratio">
+<option value="16/9">16:9 YouTube</option>
+<option value="9/16">9:16 TikTok</option>
+<option value="1/1">1:1 Instagram</option>
+<option value="4/5">4:5 Instagram</option>
+</select>
+<button onclick="preview.style.aspectRatio=ratio.value">Өлшемді өзгерту</button>
+</section>
+
+<section class="panel">
+<h3>⬇ Экспорт</h3>
+<select id="quality">
+<option value="1">720p</option>
+<option value="1.5">1080p</option>
+<option value="2">Жоғары сапа</option>
+</select>
+<button onclick="exportVideo()" style="width:100%">ВИДЕОНЫ САҚТАУ</button>
+<p class="small" id="status">Экспорт WebM форматында орындалады.</p>
+</section>
+
+</main>
+
+<script>
+const video=document.getElementById('video');
+const media=document.getElementById('media');
+const overlay=document.getElementById('overlay');
+const preview=document.getElementById('preview');
+let currentFilter='none';
+
+media.onchange=()=>{
+ const file=media.files[0];
+ if(!file)return;
+ if(file.type.startsWith('video/')){
+ video.src=URL.createObjectURL(file);
+ video.style.display='block';
+ document.getElementById('placeholder').style.display='none';
+ video.onloadedmetadata=()=>{
+ start.value=0;
+ end.value=video.duration.toFixed(1);
+ document.getElementById('duration').innerText=
+ 'Ұзақтығы: '+video.duration.toFixed(1)+' секунд';
+ };
+ }else if(file.type.startsWith('image/')){
+ const img=document.createElement('img');
+ img.src=URL.createObjectURL(file);
+ img.style.maxWidth='100%';
+ img.style.maxHeight='100%';
+ preview.replaceChildren(img,overlay);
+ }
+};
+
+function filter(value){
+ currentFilter=value;
+ video.style.filter=value;
+}
+
+bright.oninput=()=>{
+ video.style.filter=
+ currentFilter+' brightness('+bright.value+'%)';
+};
+
+function addText(){
+ overlay.innerText=caption.value;
+}
+
+musicFile.onchange=()=>{
+ const f=musicFile.files[0];
+ if(f)music.src=URL.createObjectURL(f);
+};
+
+function ai(action){
+ const prompt=action+
+ '. Менің Video Studio AI видеоредакторым үшін пайдалы ұсыныстар бер.';
+ result.innerText=
+ 'AI сұранысы дайын:\\n'+prompt+
+ '\\n\\nНақты AI жауабын алу үшін AI қызметіне қосылу қажет.';
+ navigator.clipboard?.writeText(prompt).catch(()=>{});
+}
+
+async function exportVideo(){
+ if(!video.src||!video.videoWidth){
+ alert('Алдымен видео таңда!');
+ return;
+ }
+ if(!window.MediaRecorder){
+ alert('Браузер экспортты қолдамайды.');
+ return;
+ }
+ const canvas=document.createElement('canvas');
+ const scale=Number(quality.value);
+ canvas.width=Math.round(video.videoWidth*scale);
+ canvas.height=Math.round(video.videoHeight*scale);
+ const ctx=canvas.getContext('2d');
+ const stream=canvas.captureStream(30);
+ const mime=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm']
+ .find(x=>MediaRecorder.isTypeSupported(x));
+ if(!mime){alert('Экспорт форматы қолжетімсіз.');return}
+ const recorder=new MediaRecorder(stream,{mimeType:mime});
+ const chunks=[];
+ recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+ recorder.onstop=()=>{
+ const blob=new Blob(chunks,{type:mime});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement('a');
+ a.href=url;a.download='VideoStudio.webm';a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),2000);
+ status.innerText='Видео сақталды!';
+ };
+ const from=Math.max(0,Number(start.value)||0);
+ const to=Math.min(video.duration,Number(end.value)||video.duration);
+ if(to<=from){alert('Уақытты дұрыс таңда.');return}
+ const old=video.currentTime;
+ const oldFilter=video.style.filter;
+ video.currentTime=from;
+ await new Promise(resolve=>video.onseeked=resolve);
+ status.innerText='Экспорт жүріп жатыр...';
+ recorder.start();
+ await video.play();
+ function draw(){
+ if(recorder.state!=='recording')return;
+ ctx.filter=oldFilter||'none';
+ ctx.drawImage(video,0,0,canvas.width,canvas.height);
+ ctx.filter='none';
+ if(overlay.innerText){
+ ctx.font='bold 55px Arial';
+ ctx.textAlign='center';
+ ctx.fillStyle='white';
+ ctx.shadowColor='black';ctx.shadowBlur=8;
+ ctx.fillText(overlay.innerText,canvas.width/2,canvas.height*.55);
+ ctx.shadowBlur=0;
+ }
+ if(video.currentTime>=to){
+ video.pause();recorder.stop();video.currentTime=old;
+ return;
+ }
+ requestAnimationFrame(draw);
+ }
+ draw();
+}
+</script>
+</body>
+  </html>
+  
